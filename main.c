@@ -4,12 +4,15 @@
 #include <GL/freeglut.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-// w*h*d = width*heigh*depth
-unsigned char textureData[100][100][3];
-unsigned int table[100][100];
-int pixelSize = 5;
 
-int fireIntensity[36] = {
+#define ROW 100
+#define COLUMN 100
+#define FIREINTENSITY_SIZE 36
+
+unsigned char textureData[ROW][COLUMN][3];
+unsigned int table[ROW][COLUMN];
+
+int fireIntensity[FIREINTENSITY_SIZE] = {
     0x070707, 0x1f0707, 0x2f0f07,
     0x470f07, 0x571707, 0x671f07,
     0x771f07, 0x8f2707, 0x9f2f07,
@@ -24,21 +27,21 @@ int fireIntensity[36] = {
     0xDFDF9F, 0xEFEFC7, 0xFFFFFF
 };
 
-void setColor(int x, int y, int fI){
+void setColor(int i, int j, int fI){
     int R = (fI & 0xff0000) >> 16;
     int G = (fI & 0x00ff00) >> 8;
     int B = (fI & 0x0000ff);
 
-    textureData[x][y][0] = R;
-    textureData[x][y][1] = G;
-    textureData[x][y][2] = B;
+    textureData[i][j][0] = R;
+    textureData[i][j][1] = G;
+    textureData[i][j][2] = B;
 }
 
 void fireLoop(){
     int i, j;
-    for (i = 99; i > 0; i--) {
-        for (j = 100; j > 0; j--) {
-            if (i != 100 - 1){
+    for (i = ROW-1; i > 0; i--) {
+        for (j = 0; j < COLUMN; j++) {
+            if (i != 0){
                 int fireIntensity = (table[i-1][j] - (int)rand()%3);
                 if(fireIntensity >= 0)
                     table[i][j] = fireIntensity;
@@ -52,16 +55,16 @@ void fireLoop(){
 void renderScene(){
 
     glClear(GL_COLOR_BUFFER_BIT);
-    int x,y;
+    int i,j;
     fireLoop();
 
-    for (y = 0; y < 100; y++) {
-        for (x = 0; x < 100; x++) {
-            setColor(x, y, fireIntensity[(int)table[x][y]]);
+    for (i = 0; i < ROW; i++) {
+        for (j = 0; j < COLUMN; j++) {
+            setColor(i, j, fireIntensity[(int)table[i][j]]);
         }
     }
     // Update Texture
-    glTexSubImage2D(GL_TEXTURE_2D, 0 ,0, 0, 100, 100, GL_RGB, GL_UNSIGNED_BYTE, (void*)textureData);
+    glTexSubImage2D(GL_TEXTURE_2D, 0 ,0, 0, COLUMN, ROW, GL_RGB, GL_UNSIGNED_BYTE, (void*)textureData);
 
     glBegin(GL_QUADS);
         glTexCoord2f(0.0, 0.0); glVertex2f(-1.0, -1.0);
@@ -80,14 +83,6 @@ void framebuffer_size_callback(int w, int h){
 
     glViewport(0, 0, w, h);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-
-    gluOrtho2D(-1, 1, -1, 1);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
 }
 
 void setup(){
@@ -95,24 +90,24 @@ void setup(){
 
     srand(time(NULL));
 
-    int x,y;
+    int i,j;
 
     // Clear table
-    for (y = 99; y >= 0; y--) {
-        for (x = 99; x >= 0; x--) {
-            table[x][y] = 36;
+    for (i = 0; i < ROW; i++) {
+        for (j = 0; j < COLUMN; j++) {
+            table[i][j] = FIREINTENSITY_SIZE-1;
         }
     }
 
     // Clean texture
-    for (y = 0; y < 100; y++) {
-        for (x = 0; x < 100; x++) {
-            textureData[x][y][0] = textureData[x][y][1] = textureData[x][y][2] = 0xff;
+    for (i = 0; i < ROW; i++) {
+        for (j = 0; j < COLUMN; j++) {
+            textureData[i][j][0] = textureData[i][j][1] = textureData[i][j][2] = 0;
         }
     }
 
     // Create texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 100, 100, GL_FALSE, GL_RGB, GL_UNSIGNED_BYTE, (void*)textureData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, COLUMN, ROW, GL_FALSE, GL_RGB, GL_UNSIGNED_BYTE, (void*)textureData);
 
     // Config texture
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
